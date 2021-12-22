@@ -1,0 +1,11 @@
+.venv/
+
+# the show and tell project data
+QSProjects.xlsx
+
+# example xml files for import with Extension:Data Transfer
+showtellexample.xml
+showtellexample2.xml
+
+# Mac OS files
+.DS_Store
