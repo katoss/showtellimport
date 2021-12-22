@@ -77,6 +77,7 @@ def import_data(FILE):
     df = df.replace('&', 'and', regex=True)
     # #capitalize first letter of all topics in topic list
     df['Topics'] = df.Topics.apply(lambda x: string.capwords(x, sep=', ') if pd.notnull(x) else x)
+    # TODO: remove empty lines at end of transcripts
     # TODO: remove 'other' from topic lists
     # TODO: unify similar topic names
 
