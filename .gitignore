@@ -1,8 +1,7 @@
 .venv/
 
-# the show and tell project data
-QSProjects.xlsx
-QSProjects-mini.xlsx
+# the data files
+*.xlsx
 
 # example xml files for import with Extension:Data Transfer
 showtellexample.xml

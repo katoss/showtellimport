@@ -1,8 +1,12 @@
 import pandas as pd
+import string
 
 df = pd.read_excel("QSProjects.xlsx")
 print(df)
 print(df.columns)
+
+# capitalize first letter of all topics in topic list
+df['Topics'] = df.Topics.apply(lambda x: string.capwords(x, sep=', ') if pd.notnull(x) else x)
 
 # convert content of column "Topics" to string and split 
 df["Topics"] = df["Topics"].astype('str')

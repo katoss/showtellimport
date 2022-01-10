@@ -1,10 +1,9 @@
 import requests
 import pandas as pd
-import string
 
 WIKI_URL = 'https://wiki.openhumans.org/api.php'
 FILE = 'QSProjects.xlsx'
-FILE_MINI = 'QSProjects-mini.xlsx'
+FILE_MINI = 'QSProjects-mini-clean.xlsx'
 
 def main():
     # Connecting to the wiki
@@ -12,16 +11,11 @@ def main():
     CONNECT_RESULTS = connect(WIKI_URL)
     S = CONNECT_RESULTS[0]
     CSRF_TOKEN = CONNECT_RESULTS[1]
-    # import and clean dataset
-    data = import_data(FILE_MINI)
-
-    wiki_import(data, S, CSRF_TOKEN) 
-
-    # create the text for the wiki page from the imported data
-    # PAGE_CONTENT = prepare_content()
-
-    # Posting to the wiki
-    # post_to_wiki(PAGE_CONTENT, S, CSRF_TOKEN)
+    # load cleaned dataset
+    df = pd.read_excel(FILE_MINI)
+    # prepare content from data and import it to wiki
+    for index, row in df.iterrows():
+       wiki_import(row, S, CSRF_TOKEN) 
 
 def connect(WIKI_URL):
     S = requests.Session()
@@ -68,56 +62,11 @@ def connect(WIKI_URL):
     CSRF_TOKEN = DATA['query']['tokens']['csrftoken']
     return S, CSRF_TOKEN
 
-def import_data(FILE):
-    df = pd.read_excel(FILE, sheet_name='Published Projects')
-    print(df.columns)
-
-    # Clean data
-    # Replace ampersands by 'and'
-    df = df.replace('&', 'and', regex=True)
-    # #capitalize first letter of all topics in topic list
-    df['Topics'] = df.Topics.apply(lambda x: string.capwords(x, sep=', ') if pd.notnull(x) else x)
-    # TODO: remove empty lines at end of transcripts
-    # TODO: remove 'other' from topic lists
-    # TODO: unify similar topic names
-
-    # Create df with variables needed for wiki import
-    dfw = df.drop(['Publish Status'], axis=1)
-    dfw['Vimeo ID'] = df['Vimeo URL'].str.split('/').str[3]
-
-    print(dfw.iloc[0])
-    return dfw
-
-def prepare_content():
-    INFOBOX_TOPICS = "Fitness, Brain, Mood and emotion"
-
-    INTRO = "This is the introduction"
-
-    DESCRIPTION = "This is the description"
-
-    VIDEO_ID = "96591409"
-
-    VIDEO_URL = "https://vimeo.com/96591409"
-
-    TRANSCRIPT = "This is the transcript"
-
-    PAGE_CONTENT = '''intro text
-
-    ==Description==
-    {}
-
-    ==Video and Transition==
-    test test test
-
-    {{{{Project Queries}}}}
-    '''.format(DESCRIPTION)
-    return PAGE_CONTENT
-
-def post_to_wiki(PAGE_CONTENT, S, CSRF_TOKEN):
+def post_to_wiki(PAGE_CONTENT, PAGE_TITLE, S, CSRF_TOKEN):
     # Step 4: POST request to edit a page
     PARAMS_3 = {
         "action": "edit",
-        "title": "Project:Sandbox",
+        "title": PAGE_TITLE,
         "token": CSRF_TOKEN,
         "format": "json",
         "text": PAGE_CONTENT
@@ -128,21 +77,25 @@ def post_to_wiki(PAGE_CONTENT, S, CSRF_TOKEN):
 
     print(DATA)
 
-def wiki_import(DATA, S, CSRF_TOKEN):
-    INFOBOX_TOPICS = DATA.iloc[0]['Topics']
+def wiki_import(PROJECT, S, CSRF_TOKEN):
+    INFOBOX_SELFRESEARCHER = PROJECT['Presenter Name']
 
-    INTRO = "This is the introduction"
+    INFOBOX_TOOLS = PROJECT['Tools']
 
-    DESCRIPTION = DATA.iloc[0]['Project Description']
+    INFOBOX_TOPICS = PROJECT['Topics']
 
-    VIDEO_ID = DATA.iloc[0]['Vimeo ID']
+    PROJECT_ID = PROJECT['Project ID']
 
-    VIDEO_URL = DATA.iloc[0]['Vimeo URL']
+    DESCRIPTION = PROJECT['Project Description']
 
-    TRANSCRIPT = DATA.iloc[0]['Transcription']
+    VIDEO_ID = PROJECT['Vimeo ID']
 
-    PAGE_CONTENT = '''{{{{Project Infobox|Self researchers=|Related tools=|Related topics= {} }}}}
-intro text
+    VIDEO_URL = PROJECT['Vimeo URL']
+
+    TRANSCRIPT = PROJECT['Transcription']
+
+    PAGE_CONTENT = '''{{{{Project Infobox|Self researchers= {} |Related tools= {} |Related topics= {} }}}}
+This project has been imported from the [https://quantifiedself.com/show-and-tell/?project={} Quantified Self Show & Tell library]. The talk was given at EVENT on DATE.
 
 ==Description==
 A description of this project as introduced by Quantified Self follows:
@@ -155,9 +108,11 @@ A transcript of this talk is below:
 
 <blockquote>{}</blockquote>
 {{{{Project Queries}}}}
-'''.format(INFOBOX_TOPICS, DESCRIPTION, VIDEO_ID, VIDEO_URL, TRANSCRIPT)
+'''.format(INFOBOX_SELFRESEARCHER, INFOBOX_TOOLS, INFOBOX_TOPICS, PROJECT_ID, DESCRIPTION, VIDEO_ID, VIDEO_URL, TRANSCRIPT)
 
-    post_to_wiki(PAGE_CONTENT, S, CSRF_TOKEN)
+    PAGE_TITLE = PROJECT['Project Title']
+
+    post_to_wiki(PAGE_CONTENT, PAGE_TITLE, S, CSRF_TOKEN)
 
 if __name__ == "__main__":
     main()
