@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+import yaml
 
 WIKI_URL = 'https://wiki.openhumans.org/api.php'
 FILE = 'QSProjects.xlsx'
@@ -35,14 +36,19 @@ def connect(WIKI_URL):
     DATA = R.json()
 
     LOGIN_TOKEN = DATA['query']['tokens']['logintoken']
+    
+    # load yaml file to get credentials
+    CREDENTIALS = yaml.safe_load(open("credentials.yml"))
+    USERNAME = CREDENTIALS["db"]["botname"]
+    PW = CREDENTIALS["db"]["botpassword"]
 
     # Step 2: POST request to log in. Use of main account for login is not
     # supported. Obtain credentials via Special:BotPasswords
     # (https://www.mediawiki.org/wiki/Special:BotPasswords) for lgname & lgpassword
     PARAMS_1 = {
         "action": "login",
-        "lgname": "bot_user_name",
-        "lgpassword": "bot_password",
+        "lgname": USERNAME,
+        "lgpassword": PW,
         "lgtoken": LOGIN_TOKEN,
         "format": "json"
     }

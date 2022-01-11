@@ -1,5 +1,8 @@
 .venv/
 
+# config files
+.yml
+
 # the data files
 *.xlsx
 *.numbers
